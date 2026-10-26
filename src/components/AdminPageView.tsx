@@ -13,7 +13,9 @@ import {
   Plus,
   Save,
   Settings,
+  ShieldCheck,
   Trash2,
+  User,
   Users,
   X,
 } from 'lucide-react';
@@ -24,6 +26,7 @@ import {
   FamilyEntry,
   MemorialAdminPayload,
   MemorialSettings,
+  PhotoItem,
   ProgramEventItem,
 } from '../types/memorial';
 import { ActiveRoute } from './Header';
@@ -48,12 +51,8 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
   const [token, setToken] = useState<string | null>(() =>
     sessionStorage.getItem('memorial_admin_token')
   );
-  const [authInfo, setAuthInfo] = useState<{
-    envPasswordConfigured: boolean;
-    supabaseConfigured: boolean;
-  } | null>(null);
+  const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
-  const [previewModeConfirm, setPreviewModeConfirm] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loggingIn, setLoggingIn] = useState(false);
 
@@ -72,13 +71,7 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
   const [draftFamilies, setDraftFamilies] = useState<FamilyEntry[]>([]);
   const [draftBiography, setDraftBiography] = useState<BiographySection[]>([]);
   const [draftEvents, setDraftEvents] = useState<ProgramEventItem[]>([]);
-
-  useEffect(() => {
-    fetch('/api/admin/auth-info')
-      .then((r) => r.json())
-      .then((info) => setAuthInfo(info))
-      .catch(() => {});
-  }, []);
+  const [draftPhotos, setDraftPhotos] = useState<PhotoItem[]>([]);
 
   const fetchAdminPayload = async (activeToken: string) => {
     setLoadingData(true);
@@ -97,10 +90,11 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
       setDraftFamilies(data.families);
       setDraftBiography(data.biographySections);
       setDraftEvents(data.programEvents);
-    } catch (err) {
+      setDraftPhotos(data.photos);
+    } catch {
       setSaveBanner({
         type: 'error',
-        message: 'Impossible de charger les données d’administration.',
+        message: 'Impossible de charger les données du Super Administrateur.',
       });
     } finally {
       setLoadingData(false);
@@ -122,8 +116,8 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          username: usernameInput.trim(),
           password: passwordInput,
-          previewModeConfirm,
         }),
       });
       const data = await res.json();
@@ -132,6 +126,7 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
       }
       sessionStorage.setItem('memorial_admin_token', data.token);
       setToken(data.token);
+      setUsernameInput('');
       setPasswordInput('');
     } catch (err) {
       setLoginError(
@@ -177,7 +172,7 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
       onPublicDataChanged();
       showNotice(
         'success',
-        'Paramètres enregistrés avec succès sur le serveur.'
+        'Paramètres et informations du site mis à jour avec succès.'
       );
     } catch (err) {
       showNotice(
@@ -252,7 +247,10 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
       setDraftEvents(data.programEvents);
       await handleSaveSettings(draftSettings);
       onPublicDataChanged();
-      showNotice('success', 'Programme et état de validation enregistrés.');
+      showNotice(
+        'success',
+        'Horaires, planning et états de validation enregistrés sur tout le site.'
+      );
     } catch (err) {
       showNotice(
         'error',
@@ -279,7 +277,7 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
       await fetchAdminPayload(token);
       onPublicDataChanged();
       showNotice('success', `Statut du témoignage mis à jour (${status}).`);
-    } catch (err) {
+    } catch {
       showNotice('error', 'Impossible de modifier le témoignage.');
     }
   };
@@ -300,25 +298,34 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
     }
   };
 
-  const handleModeratePhoto = async (
-    id: string,
-    status?: ContributionStatus,
+  const handleUpdatePhotoDetails = async (
+    photo: PhotoItem,
+    statusOverride?: ContributionStatus,
     clearDeletionRequest?: boolean
   ) => {
     if (!token) return;
     try {
-      const res = await fetch(`/api/admin/photos/${id}`, {
+      const res = await fetch(`/api/admin/photos/${photo.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ status, clearDeletionRequest }),
+        body: JSON.stringify({
+          title: photo.title,
+          caption: photo.caption,
+          category: photo.category,
+          status: statusOverride || photo.status,
+          clearDeletionRequest,
+        }),
       });
-      if (!res.ok) throw new Error('Erreur de modération.');
+      if (!res.ok) throw new Error('Erreur de mise à jour.');
       await fetchAdminPayload(token);
       onPublicDataChanged();
-      showNotice('success', 'Photographie mise à jour.');
+      showNotice(
+        'success',
+        'Photographie et description au survol mises à jour.'
+      );
     } catch {
       showNotice('error', 'Impossible de mettre à jour la photographie.');
     }
@@ -343,12 +350,12 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
     }
   };
 
-  // Unauthenticated view
+  // Unauthenticated view: Super Admin Username + Password Form
   if (!token) {
     return (
       <section className="py-16 sm:py-24 bg-[#EFF8FD]/40 min-h-[80vh]">
         <div className="max-w-md mx-auto px-4">
-          <div className="bg-white border border-[#DCE8EF] rounded-lg p-6 sm:p-8 space-y-6">
+          <div className="bg-white border border-[#DCE8EF] rounded-lg p-6 sm:p-8 space-y-6 shadow-sm">
             <div className="space-y-2 border-b border-[#DCE8EF] pb-4">
               <button
                 type="button"
@@ -359,59 +366,63 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
                 <span>Retour au faire-part</span>
               </button>
               <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-[#245B7A] font-semibold pt-2">
-                <Lock className="w-4 h-4" />
-                <span>Accès réservé à la famille</span>
+                <ShieldCheck className="w-4 h-4" />
+                <span>Accès réservé aux Super Administrateurs</span>
               </div>
               <h1 className="font-serif-editorial text-2xl sm:text-3xl font-semibold text-[#17191C]">
-                Administration du mémorial
+                Ajuster les informations du site
               </h1>
+              <p className="text-xs text-[#56616A] leading-relaxed">
+                Veuillez renseigner votre nom d’utilisateur et votre mot de
+                passe Super Administrateur pour modifier les horaires, le
+                planning, les textes, les familles et la galerie.
+              </p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-4">
-              {authInfo?.envPasswordConfigured ? (
-                <div>
-                  <label
-                    htmlFor="admin-password"
-                    className="block text-xs font-semibold uppercase tracking-wider text-[#17191C] mb-1.5"
-                  >
-                    Mot de passe administrateur (ADMIN_PASSWORD)
-                  </label>
+              <div>
+                <label
+                  htmlFor="admin-username"
+                  className="block text-xs font-semibold uppercase tracking-wider text-[#17191C] mb-1.5"
+                >
+                  Nom d’utilisateur (Username)
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-[#56616A] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    id="admin-username"
+                    type="text"
+                    required
+                    autoComplete="username"
+                    placeholder="Ex. : admin"
+                    value={usernameInput}
+                    onChange={(e) => setUsernameInput(e.target.value)}
+                    className="w-full pl-10 pr-3.5 py-2.5 text-sm border border-[#DCE8EF] rounded-md text-[#17191C] focus:outline-none focus:border-[#245B7A]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="admin-password"
+                  className="block text-xs font-semibold uppercase tracking-wider text-[#17191C] mb-1.5"
+                >
+                  Mot de passe (Password)
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-[#56616A] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     id="admin-password"
                     type="password"
                     required
+                    autoComplete="current-password"
+                    placeholder="••••••••"
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-sm border border-[#DCE8EF] rounded-md"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-sm border border-[#DCE8EF] rounded-md text-[#17191C] focus:outline-none focus:border-[#245B7A]"
                   />
                 </div>
-              ) : (
-                <div className="p-4 rounded-md bg-[#EFF8FD] border border-[#DCE8EF] space-y-3 text-xs text-[#17191C] leading-relaxed">
-                  <p className="font-semibold text-[#245B7A]">
-                    Mode de configuration familiale initiale
-                  </p>
-                  <p className="text-[#56616A]">
-                    La variable serveur <code>ADMIN_PASSWORD</code> n’est pas
-                    encore définie dans l’environnement. Vous pouvez ouvrir la
-                    session d’administration ci-dessous pour configurer et
-                    valider le programme, la biographie, les contacts et la
-                    modération. Avant mise en ligne définitive, définissez{' '}
-                    <code>ADMIN_PASSWORD</code> côté serveur.
-                  </p>
-                  <label className="flex items-start gap-2.5 cursor-pointer pt-1">
-                    <input
-                      type="checkbox"
-                      checked={previewModeConfirm}
-                      onChange={(e) => setPreviewModeConfirm(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-[#DCE8EF] text-[#245B7A]"
-                    />
-                    <span className="font-medium text-[#17191C]">
-                      Je suis membre autorisé de la famille ou administrateur du
-                      site
-                    </span>
-                  </label>
-                </div>
-              )}
+              </div>
 
               {loginError && (
                 <p className="text-xs text-red-800 bg-red-50 border border-red-200 p-3 rounded-md">
@@ -425,8 +436,8 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
                 className="w-full py-2.5 px-4 text-xs sm:text-sm font-medium text-white bg-[#245B7A] hover:bg-[#1B465E] rounded-md transition-colors"
               >
                 {loggingIn
-                  ? 'Ouverture de la session...'
-                  : 'Accéder à l’administration familiale'}
+                  ? 'Vérification des identifiants...'
+                  : 'Se connecter à l’espace Super Administrateur'}
               </button>
             </form>
           </div>
@@ -438,7 +449,7 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
   if (loadingData || !adminData || !draftSettings) {
     return (
       <div className="py-20 text-center text-sm text-[#56616A]">
-        Chargement de l’espace d’administration familial...
+        Chargement de l’espace Super Administrateur...
       </div>
     );
   }
@@ -457,13 +468,16 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
         <div className="bg-white border border-[#DCE8EF] rounded-lg p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2 text-xs text-[#56616A]">
-              <span>Administration familiale</span>
+              <span className="inline-flex items-center gap-1 font-semibold text-[#245B7A]">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Espace Super Administrateur (Ajuster)
+              </span>
               <span>·</span>
               <span>
-                Moteur de persistance :{' '}
+                Base de données :{' '}
                 <strong className="text-[#17191C]">
                   {adminData.backendStatus.storageEngine === 'sanity'
-                    ? 'Sanity Cloud connecté (Projet 0q8sd30m)'
+                    ? 'Sanity Cloud synchronisé (Projet 0q8sd30m)'
                     : adminData.backendStatus.supabaseConfigured
                     ? 'Supabase Cloud connecté'
                     : 'Serveur persistant local (/data/memorial-db.json)'}
@@ -471,7 +485,7 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
               </span>
             </div>
             <h1 className="font-serif-editorial text-2xl sm:text-3xl font-semibold text-[#17191C]">
-              Gestion et modération — {draftSettings.displayName}
+              Administration complète — {draftSettings.displayName}
             </h1>
           </div>
 
@@ -527,7 +541,7 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
-            <span>1. Programme & Dates</span>
+            <span>1. Horaires & Planning</span>
           </button>
 
           <button
@@ -540,7 +554,7 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
             }`}
           >
             <Settings className="w-3.5 h-3.5" />
-            <span>2. Portrait, Contact & Lieux</span>
+            <span>2. Identité, Hero, Contact & Lieux</span>
           </button>
 
           <button
@@ -580,7 +594,7 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
           >
             <MessageSquare className="w-3.5 h-3.5" />
             <span>
-              5. Modération Témoignages ({pendingTributesCount} en attente)
+              5. Témoignages ({pendingTributesCount} en attente)
             </span>
           </button>
 
@@ -594,25 +608,54 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
             }`}
           >
             <ImageIcon className="w-3.5 h-3.5" />
-            <span>6. Modération Photos ({pendingPhotosCount} à traiter)</span>
+            <span>
+              6. Photos & Descriptions ({draftPhotos.length} photos
+              {pendingPhotosCount > 0 ? ` · ${pendingPhotosCount} à traiter` : ''})
+            </span>
           </button>
         </div>
 
-        {/* TAB 1: PROGRAM & DATES VALIDATION */}
+        {/* TAB 1: PROGRAM, SCHEDULES & PLANNING */}
         {activeTab === 'program' && (
           <div className="bg-white border border-[#DCE8EF] rounded-lg p-6 sm:p-8 space-y-6">
-            <div className="space-y-2 border-b border-[#DCE8EF] pb-4">
-              <h2 className="font-serif-editorial text-2xl font-semibold text-[#17191C]">
-                Validation du programme et résolution des dates (Novembre 2026)
-              </h2>
-              <p className="text-xs sm:text-sm text-[#56616A] leading-relaxed">
-                Le programme transmis associait Vendredi au 9 novembre, Samedi au
-                10 novembre et Dimanche au 11 novembre. Or en novembre 2026, les
-                9, 10 et 11 novembre sont respectivement un lundi, un mardi et un
-                mercredi. Tant que cette incohérence n’est pas résolue ci-dessous,
-                le site affiche un bandeau de programme provisoire, masque les
-                jours de semaine et désactive l’export agenda.
-              </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#DCE8EF] pb-4">
+              <div className="space-y-1">
+                <h2 className="font-serif-editorial text-2xl font-semibold text-[#17191C]">
+                  Gestion complète des horaires et du planning des obsèques
+                </h2>
+                <p className="text-xs sm:text-sm text-[#56616A] leading-relaxed">
+                  Modifiez librement les dates, les horaires, les intitulés de
+                  cérémonies et les lieux, ou ajoutez de nouvelles étapes au
+                  planning.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setDraftEvents([
+                    ...draftEvents,
+                    {
+                      id: `evt-${Date.now()}`,
+                      dayKey: 'jour_2',
+                      dayTitleTransmitted: '10 novembre 2026',
+                      weekdayTransmitted: 'Mardi',
+                      dateConfirmed: false,
+                      timeLabel: '12 h 00',
+                      timeConfirmed: false,
+                      title: 'Nouvelle étape du programme',
+                      location: 'À préciser',
+                      locationDetails: '',
+                      locationConfirmed: false,
+                      verificationNote: '',
+                      displayOrder: draftEvents.length + 1,
+                    },
+                  ])
+                }
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-[#245B7A] bg-[#EFF8FD] hover:bg-[#A9D7F2]/30 border border-[#DCE8EF] rounded-md shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Ajouter un créneau / événement</span>
+              </button>
             </div>
 
             {/* Global Program Confirmation Checkboxes */}
@@ -631,11 +674,11 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
                 />
                 <div className="text-xs sm:text-sm">
                   <p className="font-semibold text-[#17191C]">
-                    Incohérence des jours de semaine résolue
+                    Afficher les jours de semaine sur le programme public
                   </p>
                   <p className="text-xs text-[#56616A]">
-                    Autorise l’affichage des jours de semaine à côté des dates sur
-                    le programme public.
+                    Cochez cette case lorsque les jours de semaine (ex. Lundi,
+                    Mardi, Mercredi ou Vendredi, Samedi, Dimanche) sont vérifiés.
                   </p>
                 </div>
               </label>
@@ -671,6 +714,22 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
                   key={evt.id}
                   className="p-4 rounded-md border border-[#DCE8EF] bg-white space-y-3"
                 >
+                  <div className="flex items-center justify-between border-b border-[#DCE8EF]/60 pb-2">
+                    <span className="text-xs font-semibold text-[#245B7A]">
+                      Créneau #{idx + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDraftEvents(draftEvents.filter((_, i) => i !== idx))
+                      }
+                      className="inline-flex items-center gap-1 text-xs text-red-700 hover:bg-red-50 px-2 py-1 rounded"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Supprimer ce créneau</span>
+                    </button>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                     <div>
                       <label className="block text-[11px] font-semibold uppercase text-[#56616A] mb-1">
@@ -693,7 +752,7 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
 
                     <div>
                       <label className="block text-[11px] font-semibold uppercase text-[#56616A] mb-1">
-                        Jour de semaine (si résolu)
+                        Jour de semaine
                       </label>
                       <input
                         type="text"
@@ -787,7 +846,10 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
                         checked={evt.dateConfirmed}
                         onChange={(e) => {
                           const next = [...draftEvents];
-                          next[idx] = { ...evt, dateConfirmed: e.target.checked };
+                          next[idx] = {
+                            ...evt,
+                            dateConfirmed: e.target.checked,
+                          };
                           setDraftEvents(next);
                         }}
                       />
@@ -799,7 +861,10 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
                         checked={evt.timeConfirmed}
                         onChange={(e) => {
                           const next = [...draftEvents];
-                          next[idx] = { ...evt, timeConfirmed: e.target.checked };
+                          next[idx] = {
+                            ...evt,
+                            timeConfirmed: e.target.checked,
+                          };
                           setDraftEvents(next);
                         }}
                       />
@@ -831,28 +896,115 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
               className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-medium text-white bg-[#245B7A] hover:bg-[#1B465E] rounded-md"
             >
               <Save className="w-4 h-4" />
-              <span>Enregistrer le programme</span>
+              <span>Enregistrer les horaires et le planning</span>
             </button>
           </div>
         )}
 
-        {/* TAB 2: PORTRAIT, CONTACT & LOCATIONS */}
+        {/* TAB 2: IDENTITY, HERO IMAGE, CONTACT & LOCATIONS */}
         {activeTab === 'settings_contact' && (
           <div className="bg-white border border-[#DCE8EF] rounded-lg p-6 sm:p-8 space-y-6">
             <h2 className="font-serif-editorial text-2xl font-semibold text-[#17191C] border-b border-[#DCE8EF] pb-3">
-              Portrait, Contact WhatsApp et Localisation
+              Identité, Image Hero d’accueil, Contact WhatsApp et Localisation
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Portrait & General */}
+              {/* Identity & Hero Image */}
               <div className="space-y-4">
                 <h3 className="font-semibold text-sm text-[#245B7A] uppercase tracking-wider">
-                  Identité et Portrait
+                  Identité du défunt & Image Hero
                 </h3>
+
                 <div>
                   <label className="block text-xs font-semibold text-[#17191C] mb-1">
-                    URL de la photographie de portrait (laisser vide pour le
-                    monogramme typographique)
+                    Nom complet affiché sur le site
+                  </label>
+                  <input
+                    type="text"
+                    value={draftSettings.displayName}
+                    onChange={(e) =>
+                      setDraftSettings({
+                        ...draftSettings,
+                        displayName: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-xs border border-[#DCE8EF] rounded-md"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#17191C] mb-1">
+                      Année de naissance
+                    </label>
+                    <input
+                      type="number"
+                      value={draftSettings.birthYear}
+                      onChange={(e) =>
+                        setDraftSettings({
+                          ...draftSettings,
+                          birthYear: Number(e.target.value) || 1989,
+                        })
+                      }
+                      className="w-full px-3 py-2 text-xs border border-[#DCE8EF] rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#17191C] mb-1">
+                      Année de décès
+                    </label>
+                    <input
+                      type="number"
+                      value={draftSettings.deathYear}
+                      onChange={(e) =>
+                        setDraftSettings({
+                          ...draftSettings,
+                          deathYear: Number(e.target.value) || 2026,
+                        })
+                      }
+                      className="w-full px-3 py-2 text-xs border border-[#DCE8EF] rounded-md"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#17191C] mb-1">
+                      Lieu de naissance
+                    </label>
+                    <input
+                      type="text"
+                      value={draftSettings.birthPlace}
+                      onChange={(e) =>
+                        setDraftSettings({
+                          ...draftSettings,
+                          birthPlace: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 text-xs border border-[#DCE8EF] rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#17191C] mb-1">
+                      Situation matrimoniale
+                    </label>
+                    <input
+                      type="text"
+                      value={draftSettings.maritalStatus}
+                      onChange={(e) =>
+                        setDraftSettings({
+                          ...draftSettings,
+                          maritalStatus: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 text-xs border border-[#DCE8EF] rounded-md"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#17191C] mb-1">
+                    Image de la Hero Page (arrière-plan d’accueil & aperçu WhatsApp)
                   </label>
                   <input
                     type="text"
@@ -865,11 +1017,39 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
                     }
                     className="w-full px-3 py-2 text-xs border border-[#DCE8EF] rounded-md"
                   />
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDraftSettings({
+                          ...draftSettings,
+                          portraitUrl:
+                            '/assets/aistudio/Portrait_c_r_moniel_devant_la_chefferie_de_Bandjoun_f1aac569.png',
+                        })
+                      }
+                      className="px-2.5 py-1 text-[11px] bg-[#EFF8FD] hover:bg-[#A9D7F2]/40 text-[#245B7A] border border-[#DCE8EF] rounded"
+                    >
+                      Portrait Chefferie Bandjoun (Par défaut)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDraftSettings({
+                          ...draftSettings,
+                          portraitUrl:
+                            '/assets/aistudio/Poign_e_de_main_diplomatique_devant_les_drapeaux_da7da34b.png',
+                        })
+                      }
+                      className="px-2.5 py-1 text-[11px] bg-[#EFF8FD] hover:bg-[#A9D7F2]/40 text-[#245B7A] border border-[#DCE8EF] rounded"
+                    >
+                      Rencontre diplomatique
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-[#17191C] mb-1">
-                    Symbole de recueillement (soumis à validation familiale)
+                    Symbole de recueillement
                   </label>
                   <select
                     value={draftSettings.religiousSymbol}
@@ -907,10 +1087,9 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
                   Contact familial & WhatsApp
                 </h3>
                 <p className="text-xs text-[#56616A] leading-relaxed">
-                  Le numéro issu du projet précédent (+33 7 53 04 93 53) est
-                  conservé ici à titre de configuration. Tant que la case «
-                  Contact confirmé » n’est pas cochée, aucun bouton WhatsApp
-                  n’apparaît sur le site public.
+                  Configurez le numéro de téléphone ou WhatsApp familial et
+                  cochez « Confirmer ce numéro » pour activer le bouton de
+                  contact direct sur le site public.
                 </p>
 
                 <div>
@@ -1015,7 +1194,7 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
 
               <div className="space-y-3">
                 <h3 className="font-semibold text-sm text-[#245B7A] uppercase tracking-wider">
-                  Ouverture des contributions
+                  Ouverture des contributions publiques
                 </h3>
                 <label className="flex items-start gap-2.5 text-xs cursor-pointer p-3 rounded border border-[#DCE8EF]">
                   <input
@@ -1030,8 +1209,7 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
                     className="mt-0.5 h-4 w-4"
                   />
                   <span>
-                    Autoriser l’envoi de condoléances et témoignages (toujours
-                    modérés avant publication)
+                    Autoriser l’envoi de condoléances et témoignages sur le site
                   </span>
                 </label>
 
@@ -1048,8 +1226,8 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
                     className="mt-0.5 h-4 w-4"
                   />
                   <span>
-                    Autoriser les invités à proposer des photos souvenirs (avec
-                    retrait GPS et modération obligatoire)
+                    Autoriser les invités à partager des photos souvenirs sur le
+                    site
                   </span>
                 </label>
               </div>
@@ -1199,15 +1377,37 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
         {/* TAB 4: BIOGRAPHY */}
         {activeTab === 'biography' && (
           <div className="bg-white border border-[#DCE8EF] rounded-lg p-6 sm:p-8 space-y-6">
-            <div className="space-y-1 border-b border-[#DCE8EF] pb-4">
-              <h2 className="font-serif-editorial text-2xl font-semibold text-[#17191C]">
-                Sections de la biographie
-              </h2>
-              <p className="text-xs text-[#56616A]">
-                Les sections non cochées « Afficher publiquement » ou vides restent
-                masquées sur le site public afin de ne jamais publier d’informations
-                incomplètes.
-              </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#DCE8EF] pb-4">
+              <div className="space-y-1">
+                <h2 className="font-serif-editorial text-2xl font-semibold text-[#17191C]">
+                  Sections de la biographie
+                </h2>
+                <p className="text-xs text-[#56616A]">
+                  Modifiez les titres et textes biographiques ou activez de
+                  nouvelles rubriques sur le site public.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setDraftBiography([
+                    ...draftBiography,
+                    {
+                      id: `bio-${Date.now()}`,
+                      code: 'souvenir_transmission',
+                      title: 'Nouvelle rubrique biographique',
+                      content: '',
+                      isVisiblePublic: true,
+                      isValidated: true,
+                      displayOrder: draftBiography.length + 1,
+                    },
+                  ])
+                }
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-[#245B7A] bg-[#EFF8FD] border border-[#DCE8EF] rounded-md shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Ajouter une section</span>
+              </button>
             </div>
 
             <div className="space-y-5">
@@ -1217,9 +1417,16 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
                   className="p-4 rounded-md border border-[#DCE8EF] space-y-3"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h3 className="font-serif-editorial text-xl font-semibold text-[#17191C]">
-                      {sec.title}
-                    </h3>
+                    <input
+                      type="text"
+                      value={sec.title}
+                      onChange={(e) => {
+                        const next = [...draftBiography];
+                        next[idx] = { ...sec, title: e.target.value };
+                        setDraftBiography(next);
+                      }}
+                      className="font-serif-editorial text-xl font-semibold text-[#17191C] border border-[#DCE8EF] rounded px-2.5 py-1 flex-1 min-w-[220px]"
+                    />
                     <label className="inline-flex items-center gap-2 text-xs font-medium text-[#245B7A] cursor-pointer">
                       <input
                         type="checkbox"
@@ -1272,9 +1479,8 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
                 Modération des témoignages et messages privés
               </h2>
               <p className="text-xs text-[#56616A]">
-                Approuvez les témoignages publics vérifiés pour les publier dans le
-                livre d’hommages, ou consultez les messages privés adressés à la
-                famille.
+                Gérez les témoignages publiés dans le livre d’hommages ou
+                consultez les messages privés adressés à la famille.
               </p>
             </div>
 
@@ -1337,7 +1543,7 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
                               className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-[#56616A] bg-white border border-[#DCE8EF] hover:text-[#17191C] rounded"
                             >
                               <X className="w-3.5 h-3.5" />
-                              <span>Rejeter</span>
+                              <span>Masquer / Rejeter</span>
                             </button>
                           </>
                         )}
@@ -1359,78 +1565,113 @@ export const AdminPageView: React.FC<AdminPageViewProps> = ({
           </div>
         )}
 
-        {/* TAB 6: PHOTOS MODERATION */}
+        {/* TAB 6: PHOTOS & HOVER CAPTIONS MANAGEMENT */}
         {activeTab === 'photos' && (
           <div className="bg-white border border-[#DCE8EF] rounded-lg p-6 sm:p-8 space-y-6">
             <div className="border-b border-[#DCE8EF] pb-4 space-y-1">
               <h2 className="font-serif-editorial text-2xl font-semibold text-[#17191C]">
-                Modération des photographies et demandes de retrait
+                Galerie photographique et courtes descriptions au survol
               </h2>
               <p className="text-xs text-[#56616A]">
-                Gérez les photographies visibles dans l’album souvenir et traitez
-                les éventuelles demandes de retrait.
+                Modifiez le titre, la catégorie et la courte description qui
+                s’affiche lorsque le curseur survole chaque image sur le site.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {adminData.photos.map((photo) => (
+              {draftPhotos.map((photo, idx) => (
                 <div
                   key={photo.id}
                   className="border border-[#DCE8EF] rounded-lg overflow-hidden bg-white flex flex-col justify-between"
                 >
-                  <div className="p-4 flex gap-4 items-start">
-                    <img
-                      src={photo.imageDataUrl}
-                      alt={photo.title}
-                      className="w-24 h-24 object-cover rounded border border-[#DCE8EF] shrink-0"
-                    />
-                    <div className="space-y-1 text-xs">
-                      <p className="font-semibold text-sm text-[#17191C]">
-                        {photo.title}
-                      </p>
-                      <p className="text-[#56616A]">
-                        Auteur : {photo.authorName} · Statut :{' '}
-                        <strong className="text-[#245B7A]">
-                          {photo.status.toUpperCase()}
-                        </strong>
-                      </p>
-                      {photo.caption && (
-                        <p className="text-[#56616A] italic">{photo.caption}</p>
-                      )}
-                      {photo.deletionRequested && (
-                        <div className="p-2 mt-2 rounded bg-red-50 border border-red-200 text-red-900">
-                          <p className="font-semibold">
-                            Demande de retrait signalée :
-                          </p>
-                          <p>{photo.deletionReason}</p>
+                  <div className="p-4 space-y-3">
+                    <div className="flex gap-4 items-start">
+                      <img
+                        src={photo.imageDataUrl}
+                        alt={photo.title}
+                        className="w-24 h-24 object-cover rounded border border-[#DCE8EF] shrink-0"
+                      />
+                      <div className="space-y-2 flex-1 text-xs">
+                        <div>
+                          <label className="block text-[11px] font-semibold uppercase text-[#56616A] mb-0.5">
+                            Titre de l’image
+                          </label>
+                          <input
+                            type="text"
+                            value={photo.title}
+                            onChange={(e) => {
+                              const next = [...draftPhotos];
+                              next[idx] = { ...photo, title: e.target.value };
+                              setDraftPhotos(next);
+                            }}
+                            className="w-full px-2.5 py-1.5 text-xs border border-[#DCE8EF] rounded font-medium text-[#17191C]"
+                          />
                         </div>
-                      )}
+
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[#56616A]">
+                            Auteur : {photo.authorName}
+                          </span>
+                          <span className="font-semibold text-[#245B7A]">
+                            {photo.status.toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
                     </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase text-[#56616A] mb-1">
+                        Courte description affichée au survol de la souris
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={photo.caption}
+                        onChange={(e) => {
+                          const next = [...draftPhotos];
+                          next[idx] = { ...photo, caption: e.target.value };
+                          setDraftPhotos(next);
+                        }}
+                        placeholder="Courte description qui apparaît sur l’image au passage du curseur..."
+                        className="w-full px-2.5 py-1.5 text-xs border border-[#DCE8EF] rounded leading-relaxed"
+                      />
+                    </div>
+
+                    {photo.deletionRequested && (
+                      <div className="p-2 rounded bg-red-50 border border-red-200 text-xs text-red-900">
+                        <p className="font-semibold">
+                          Demande de retrait signalée :
+                        </p>
+                        <p>{photo.deletionReason}</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-3 bg-[#EFF8FD]/50 border-t border-[#DCE8EF] flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
                         onClick={() =>
-                          handleModeratePhoto(photo.id, 'approved', true)
+                          handleUpdatePhotoDetails(photo, 'approved', true)
                         }
-                        className="px-2.5 py-1 text-xs font-medium text-white bg-[#245B7A] rounded"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-[#245B7A] hover:bg-[#1B465E] rounded"
                       >
-                        Approuver
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Enregistrer & Publier</span>
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleModeratePhoto(photo.id, 'rejected')}
-                        className="px-2.5 py-1 text-xs font-medium text-[#56616A] bg-white border border-[#DCE8EF] rounded"
+                        onClick={() =>
+                          handleUpdatePhotoDetails(photo, 'rejected')
+                        }
+                        className="px-2.5 py-1.5 text-xs font-medium text-[#56616A] bg-white border border-[#DCE8EF] rounded"
                       >
-                        Masquer / Rejeter
+                        Masquer
                       </button>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleDeletePhoto(photo.id)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50 rounded"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 rounded"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Supprimer</span>

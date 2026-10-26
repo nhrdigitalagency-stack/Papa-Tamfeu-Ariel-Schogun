@@ -134,7 +134,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => handleLinkClick('/admin')}
                 className="text-xs text-[#56616A] hover:text-[#17191C] underline underline-offset-4 py-1"
               >
-                Espace administration familiale
+                Ajuster
               </button>
             </div>
           </div>

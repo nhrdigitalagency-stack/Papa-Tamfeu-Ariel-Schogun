@@ -133,22 +133,34 @@ export const Footer: React.FC<FooterProps> = ({ settings, onNavigate }) => {
                 <button
                   type="button"
                   onClick={() => onNavigate('/admin')}
-                  className="hover:text-white transition-colors text-[#A9D7F2]"
+                  className="hover:text-white transition-colors text-[#A9D7F2] font-medium"
                 >
-                  Administration familiale (/admin)
+                  Ajuster
                 </button>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-white/60">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-white/60">
           <p>
             En mémoire de {settings.displayName} ({settings.birthYear}–
             {settings.deathYear}). Famille Tamfeu, Famille Carlade et familles
             alliées.
           </p>
-          <p>Fuseau horaire de référence : {settings.timeZone}</p>
+          <div className="flex flex-wrap items-center gap-4">
+            <span>Fuseau horaire de référence : {settings.timeZone}</span>
+            <span aria-hidden="true" className="text-white/30">
+              ·
+            </span>
+            <button
+              type="button"
+              onClick={() => onNavigate('/admin')}
+              className="text-[#A9D7F2] hover:text-white underline underline-offset-4 font-medium transition-colors"
+            >
+              Ajuster
+            </button>
+          </div>
         </div>
       </div>
     </footer>

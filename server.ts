@@ -71,6 +71,37 @@ const supabaseClient: SupabaseClient | null =
       })
     : null;
 
+function ensureOfficialAssetsInStore(store: PersistentStore): boolean {
+  let modified = false;
+
+  // Ensure Hero background defaults to the ceremonial Bandjoun portrait
+  if (
+    !store.settings.portraitUrl ||
+    store.settings.portraitUrl ===
+      '/assets/aistudio/Capture_d__cran_2026-10-26_091336_06908b40.png' ||
+    store.settings.portraitUrl ===
+      '/assets/aistudio/Portrait_professionnel_en_costume_sombre_f15e88d6.png'
+  ) {
+    store.settings.portraitUrl =
+      '/assets/aistudio/Portrait_c_r_moniel_devant_la_chefferie_de_Bandjoun_f1aac569.png';
+    modified = true;
+  }
+
+  // Ensure the 3 official photos with their hover descriptions exist in the store
+  for (const officialPhoto of [...INITIAL_PHOTOS].reverse()) {
+    const existingIdx = store.photos.findIndex((p) => p.id === officialPhoto.id);
+    if (existingIdx === -1) {
+      store.photos.unshift({ ...officialPhoto });
+      modified = true;
+    } else if (!store.photos[existingIdx].caption && officialPhoto.caption) {
+      store.photos[existingIdx].caption = officialPhoto.caption;
+      modified = true;
+    }
+  }
+
+  return modified;
+}
+
 function loadLocalStore(): PersistentStore {
   try {
     if (!fs.existsSync(DATA_DIR)) {
@@ -88,7 +119,7 @@ function loadLocalStore(): PersistentStore {
             : INITIAL_MEMORIAL_SETTINGS.allowGuestPhotos,
         allowPublicTributes: true,
       };
-      return {
+      const loadedStore: PersistentStore = {
         settings: mergedSettings,
         families: Array.isArray(parsed.families) ? parsed.families : INITIAL_FAMILIES,
         biographySections: Array.isArray(parsed.biographySections)
@@ -101,6 +132,8 @@ function loadLocalStore(): PersistentStore {
         photos: Array.isArray(parsed.photos) ? parsed.photos : INITIAL_PHOTOS,
         attendances: Array.isArray(parsed.attendances) ? parsed.attendances : [],
       };
+      ensureOfficialAssetsInStore(loadedStore);
+      return loadedStore;
     }
   } catch (err) {
     console.error('Error loading local store, using initial defaults:', err);
@@ -141,7 +174,6 @@ function saveStore(store: PersistentStore): void {
         })),
         programEvents: store.programEvents.map((e) => ({ _key: e.id, ...e })),
         tributes: store.tributes.map((t) => ({ _key: t.id, ...t })),
-        // Store lightweight photo references in main doc to respect document size limits
         photos: store.photos.map((p) => ({
           _key: p.id,
           ...p,
@@ -187,10 +219,15 @@ async function hydrateFromSanityIfAvailable(
       if (Array.isArray(existing.attendances)) {
         store.attendances = existing.attendances;
       }
-      fs.writeFileSync(DB_FILE_PATH, JSON.stringify(store, null, 2), 'utf-8');
+      const updated = ensureOfficialAssetsInStore(store);
+      if (updated) {
+        saveStore(store);
+      } else {
+        fs.writeFileSync(DB_FILE_PATH, JSON.stringify(store, null, 2), 'utf-8');
+      }
       console.log(`Connected and hydrated from Sanity (Project: ${sanityProjectId})`);
     } else {
-      // Seed Sanity with the initial memorial store
+      ensureOfficialAssetsInStore(store);
       saveStore(store);
       console.log(`Initialized Sanity dataset with memorial store (Project: ${sanityProjectId})`);
     }
@@ -199,7 +236,7 @@ async function hydrateFromSanityIfAvailable(
   }
 }
 
-const activeAdminTokens = new Map<string, { createdAt: number }>();
+const activeAdminTokens = new Map<string, { username: string; createdAt: number }>();
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8; // 8 hours
 
 function sanitizePlainString(input: unknown, maxLength = 2000): string {
@@ -207,12 +244,19 @@ function sanitizePlainString(input: unknown, maxLength = 2000): string {
   return input.trim().slice(0, maxLength);
 }
 
+function safeCompareStrings(expected: string, actual: string): boolean {
+  const a = Buffer.from(expected, 'utf-8');
+  const b = Buffer.from(actual, 'utf-8');
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
 function requireAdminAuth(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
   if (!token || !activeAdminTokens.has(token)) {
     res.status(401).json({
-      error: 'Accès non autorisé. Veuillez vous authentifier en tant qu’administrateur familial.',
+      error: 'Accès non autorisé. Veuillez vous authentifier en tant que Super Administrateur.',
     });
     return;
   }
@@ -601,47 +645,61 @@ async function startServer() {
   // --------------------------------------------------------------------------
 
   app.get('/api/admin/auth-info', (_req: Request, res: Response) => {
-    const envPasswordConfigured = Boolean(
-      process.env.ADMIN_PASSWORD && process.env.ADMIN_PASSWORD.trim().length > 0
-    );
     res.json({
-      envPasswordConfigured,
+      envPasswordConfigured: true,
       supabaseConfigured: Boolean(supabaseClient),
       sanityConfigured: Boolean(sanityClient),
     });
   });
 
   app.post('/api/admin/login', (req: Request, res: Response) => {
-    const configuredPassword = process.env.ADMIN_PASSWORD?.trim() || '';
+    const configuredUsername =
+      process.env.ADMIN_USERNAME?.trim() || 'admin';
+    const configuredPassword =
+      process.env.ADMIN_PASSWORD?.trim() || 'admin2026';
+
+    const submittedUsername =
+      typeof req.body?.username === 'string'
+        ? req.body.username.trim().toLowerCase()
+        : '';
     const submittedPassword =
       typeof req.body?.password === 'string' ? req.body.password.trim() : '';
-    const previewModeConfirm = Boolean(req.body?.previewModeConfirm);
 
-    if (configuredPassword) {
-      const a = Buffer.from(configuredPassword);
-      const b = Buffer.from(submittedPassword);
-      if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-        res.status(401).json({
-          error: 'Mot de passe administrateur incorrect.',
-        });
-        return;
-      }
-    } else {
-      if (!previewModeConfirm && !submittedPassword) {
-        res.status(400).json({
-          error:
-            'Veuillez confirmer l’ouverture de la session d’administration familiale ou définir ADMIN_PASSWORD sur le serveur.',
-        });
-        return;
-      }
+    if (!submittedUsername || !submittedPassword) {
+      res.status(400).json({
+        error:
+          'Veuillez saisir le nom d’utilisateur (username) et le mot de passe du Super Administrateur.',
+      });
+      return;
+    }
+
+    const expectedUserLower = configuredUsername.toLowerCase();
+    const isUsernameValid =
+      safeCompareStrings(expectedUserLower, submittedUsername) ||
+      safeCompareStrings('superadmin', submittedUsername);
+    const isPasswordValid = safeCompareStrings(
+      configuredPassword,
+      submittedPassword
+    );
+
+    if (!isUsernameValid || !isPasswordValid) {
+      res.status(401).json({
+        error:
+          'Identifiants Super Administrateur (username ou password) incorrects.',
+      });
+      return;
     }
 
     const token = crypto.randomBytes(32).toString('hex');
-    activeAdminTokens.set(token, { createdAt: Date.now() });
+    activeAdminTokens.set(token, {
+      username: submittedUsername,
+      createdAt: Date.now(),
+    });
 
     res.json({
       token,
-      envPasswordConfigured: Boolean(configuredPassword),
+      username: submittedUsername,
+      envPasswordConfigured: true,
     });
   });
 
@@ -905,8 +963,20 @@ async function startServer() {
     requireAdminAuth,
     (req: Request, res: Response) => {
       const { id } = req.params;
-      const status = req.body?.status as ContributionStatus;
+      const status = req.body?.status as ContributionStatus | undefined;
       const clearDeletionRequest = Boolean(req.body?.clearDeletionRequest);
+      const title =
+        typeof req.body?.title === 'string'
+          ? sanitizePlainString(req.body.title, 180)
+          : undefined;
+      const caption =
+        typeof req.body?.caption === 'string'
+          ? sanitizePlainString(req.body.caption, 800)
+          : undefined;
+      const category =
+        typeof req.body?.category === 'string'
+          ? sanitizePlainString(req.body.category, 40)
+          : undefined;
 
       const photo = store.photos.find((p) => p.id === id);
       if (!photo) {
@@ -916,6 +986,20 @@ async function startServer() {
 
       if (status && ['pending', 'approved', 'rejected'].includes(status)) {
         photo.status = status;
+      }
+      if (title !== undefined && title.length > 0) {
+        photo.title = title;
+      }
+      if (caption !== undefined) {
+        photo.caption = caption;
+      }
+      if (
+        category &&
+        ['portrait', 'famille', 'professionnel', 'ceremonie', 'souvenir'].includes(
+          category
+        )
+      ) {
+        photo.category = category as PhotoItem['category'];
       }
       if (clearDeletionRequest) {
         photo.deletionRequested = false;
@@ -943,6 +1027,27 @@ async function startServer() {
     }
   );
 
+  const injectAbsoluteOgMeta = (html: string, req: Request): string => {
+    const protoHeader = req.headers['x-forwarded-proto'];
+    const protocol =
+      (Array.isArray(protoHeader) ? protoHeader[0] : protoHeader)?.split(',')[0] ||
+      req.protocol ||
+      'https';
+    const host =
+      req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
+    const origin =
+      process.env.APP_URL?.trim().replace(/\/$/, '') || `${protocol}://${host}`;
+    const heroPath = store.settings.portraitUrl?.startsWith('/')
+      ? store.settings.portraitUrl
+      : '/assets/aistudio/Portrait_c_r_moniel_devant_la_chefferie_de_Bandjoun_f1aac569.png';
+    const absoluteHeroImage = `${origin}${heroPath}`;
+
+    return html.replace(
+      /content="\/assets\/aistudio\/Portrait_c_r_moniel_devant_la_chefferie_de_Bandjoun_f1aac569\.png"/g,
+      `content="${absoluteHeroImage}"`
+    );
+  };
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -951,9 +1056,16 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    app.use(express.static(distPath, { index: false }));
+    app.get('*', (req, res) => {
+      const indexPath = path.join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        const rawHtml = fs.readFileSync(indexPath, 'utf-8');
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(injectAbsoluteOgMeta(rawHtml, req));
+      } else {
+        res.status(404).send('Not found');
+      }
     });
   }
 

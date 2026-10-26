@@ -3,6 +3,7 @@ import {
   AlertCircle,
   Camera,
   CheckCircle2,
+  Eye,
   Flag,
   ImagePlus,
   ShieldCheck,
@@ -24,9 +25,9 @@ interface PhotosSectionViewProps {
 }
 
 const CATEGORY_LABELS: Record<PhotoItem['category'], string> = {
-  portrait: 'Portrait',
+  portrait: 'Portrait & Tradition',
   famille: 'Souvenir familial',
-  professionnel: 'Vie professionnelle',
+  professionnel: 'Vie professionnelle & Rayonnement',
   ceremonie: 'Hommage & Cérémonie',
   souvenir: 'Souvenir partagé',
 };
@@ -162,7 +163,7 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
       setUploadFeedback({
         type: 'error',
         message:
-          'Veuillez confirmer votre accord de publication sous réserve de validation par la famille.',
+          'Veuillez confirmer votre accord de publication sur le site.',
       });
       return;
     }
@@ -188,12 +189,11 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
       }
 
       setPreparedFiles([]);
-      setConsentPublication(false);
       setUploadFeedback({
         type: 'success',
         message:
           data.message ||
-          'Photographies transférées et enregistrées en attente de modération familiale.',
+          'Photographies partagées et publiées directement dans la galerie.',
       });
       onRefreshData();
     } catch (err) {
@@ -258,18 +258,18 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
         isDedicatedPage ? 'min-h-[75vh]' : ''
       }`}
     >
-      <div className="max-w-[1050px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+      <div className="max-w-[1120px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#DCE8EF] pb-6">
           <div className="space-y-2">
             <p className="text-xs tracking-widest uppercase text-[#56616A] font-medium">
-              Album de recueillement · Avec l’accord de la famille
+              Album de recueillement · Survolez une image pour lire sa description
             </p>
             <h2
               id="souvenirs-heading"
               className="font-serif-editorial text-3xl sm:text-4xl font-semibold text-[#17191C]"
             >
-              Photos et souvenirs
+              Galerie de souvenirs et moments de vie
             </h2>
           </div>
 
@@ -279,8 +279,8 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
               [
                 { key: 'all', label: 'Tous' },
                 { key: 'portrait', label: 'Portraits' },
+                { key: 'professionnel', label: 'Parcours & Rencontres' },
                 { key: 'famille', label: 'Famille' },
-                { key: 'professionnel', label: 'Vie professionnelle' },
                 { key: 'ceremonie', label: 'Cérémonies' },
               ] as const
             ).map((tab) => (
@@ -300,51 +300,70 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
           </div>
         </div>
 
-        {/* Approved Photos Grid */}
+        {/* Interactive Hover-Description Photo Gallery */}
         {filteredPhotos.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPhotos.map((photo) => (
               <figure
                 key={photo.id}
-                className="bg-white border border-[#DCE8EF] rounded-lg overflow-hidden flex flex-col justify-between"
+                className="group relative bg-white border border-[#DCE8EF] rounded-lg overflow-hidden shadow-xs flex flex-col justify-between"
               >
-                <button
-                  type="button"
+                {/* Image Container with Hover Description Overlay */}
+                <div
                   onClick={() => setLightboxPhoto(photo)}
-                  className="w-full text-left overflow-hidden bg-[#EFF8FD] focus-visible:outline-2 focus-visible:outline-[#245B7A]"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setLightboxPhoto(photo);
+                    }
+                  }}
+                  className="relative w-full h-80 overflow-hidden bg-[#17191C] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#245B7A]"
                 >
                   <img
                     src={photo.imageDataUrl}
                     alt={photo.title}
                     referrerPolicy="no-referrer"
-                    className="w-full h-64 object-cover object-top hover:opacity-95 transition-opacity"
+                    className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                   />
-                </button>
 
-                <figcaption className="p-4 space-y-2 flex-1 flex flex-col justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between gap-2 text-xs text-[#56616A]">
-                      <span>{CATEGORY_LABELS[photo.category]}</span>
-                      <span>·</span>
-                      <span>Partagé par {photo.authorName}</span>
-                    </div>
-                    <h3 className="font-serif-editorial text-lg font-semibold text-[#17191C]">
-                      {photo.title}
-                    </h3>
-                    {photo.caption && (
-                      <p className="text-xs text-[#56616A] leading-relaxed">
-                        {photo.caption}
+                  {/* Hover Overlay with Short Description appearing directly on the image */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#17191C]/95 via-[#17191C]/65 to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5 text-left">
+                    <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 space-y-2">
+                      <span className="text-[11px] uppercase tracking-widest text-[#A9D7F2] font-semibold block">
+                        {CATEGORY_LABELS[photo.category]}
+                      </span>
+                      <h3 className="font-serif-editorial text-xl font-semibold text-white leading-snug">
+                        {photo.title}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-white/90 leading-relaxed">
+                        {photo.caption ||
+                          `Souvenir partagé en mémoire de ${settings.displayName}.`}
                       </p>
-                    )}
+                      <div className="pt-2 flex items-center justify-between text-[11px] text-[#A9D7F2] border-t border-white/20">
+                        <span>Partagé par {photo.authorName}</span>
+                        <span className="inline-flex items-center gap-1 font-medium text-white">
+                          <Eye className="w-3.5 h-3.5" />
+                          Agrandir
+                        </span>
+                      </div>
+                    </div>
                   </div>
+                </div>
 
-                  <div className="pt-2 border-t border-[#DCE8EF] flex items-center justify-between">
+                {/* Subtle Bottom Bar for Mobile / Quick Access */}
+                <figcaption className="px-4 py-3 bg-white border-t border-[#DCE8EF] flex items-center justify-between gap-2">
+                  <span className="font-serif-editorial text-base font-semibold text-[#17191C] truncate">
+                    {photo.title}
+                  </span>
+                  <div className="flex items-center gap-3 shrink-0">
                     <button
                       type="button"
                       onClick={() => setLightboxPhoto(photo)}
                       className="text-xs font-medium text-[#245B7A] hover:underline"
                     >
-                      Agrandir
+                      Voir
                     </button>
                     <button
                       type="button"
@@ -352,10 +371,10 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
                         setDeletionModalPhoto(photo);
                         setDeletionStatus(null);
                       }}
+                      title="Signaler ou demander un retrait"
                       className="inline-flex items-center gap-1 text-xs text-[#56616A] hover:text-[#17191C]"
                     >
                       <Flag className="w-3 h-3" />
-                      <span>Demander un retrait</span>
                     </button>
                   </div>
                 </figcaption>
@@ -367,15 +386,11 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
             <p className="font-serif-editorial text-xl text-[#17191C]">
               Aucune photographie dans cette catégorie pour le moment.
             </p>
-            <p className="text-xs sm:text-sm text-[#56616A]">
-              Seules les photographies autorisées et validées par la famille sont
-              affichées publiquement.
-            </p>
           </div>
         )}
 
         {/* Guest Photo Contribution Block */}
-        {settings.allowGuestPhotos ? (
+        {settings.allowGuestPhotos && (
           <div className="bg-white/95 border border-[#DCE8EF] rounded-lg p-6 sm:p-8 space-y-6">
             <div className="space-y-2 border-b border-[#DCE8EF] pb-4">
               <div className="flex items-center gap-2 text-xs uppercase tracking-widest font-semibold text-[#245B7A]">
@@ -383,14 +398,14 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
                 <span>Partage direct des photos du deuil et des souvenirs</span>
               </div>
               <h3 className="font-serif-editorial text-2xl font-semibold text-[#17191C]">
-                Partager vos photographies prises lors du deuil
+                Partager vos photographies avec une courte description
               </h3>
               <p className="text-xs sm:text-sm text-[#56616A] leading-relaxed">
                 Les proches, collègues, amis et connaissances ayant assisté aux
-                cérémonies ou disposant de souvenirs de Papa Tamfeu Ariel Schogun
-                peuvent partager leurs photos directement ici. Les métadonnées GPS
-                sont automatiquement retirées avant la mise en ligne (jusqu’à 10
-                fichiers par envoi, 10 Mo max par fichier).
+                cérémonies peuvent partager leurs photos directement ici avec une
+                courte description (qui s’affichera au survol de l’image). Les
+                métadonnées GPS sont automatiquement retirées avant la mise en
+                ligne.
               </p>
             </div>
 
@@ -429,13 +444,13 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
                     }
                     className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#DCE8EF] rounded-md text-[#17191C] focus:outline-none focus:border-[#245B7A]"
                   >
+                    <option value="ceremonie">Hommage & Cérémonie</option>
                     <option value="souvenir">Souvenir partagé</option>
                     <option value="professionnel">
-                      Vie professionnelle (Université de Douala / Collège La Retraite)
+                      Parcours professionnel & Rencontres
                     </option>
-                    <option value="famille">Photo familiale autorisée</option>
+                    <option value="famille">Photo familiale</option>
                     <option value="portrait">Portrait</option>
-                    <option value="ceremonie">Hommage & Cérémonie</option>
                   </select>
                 </div>
               </div>
@@ -462,8 +477,8 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
                       : 'Sélectionner des photographies (JPEG, PNG, WebP)'}
                   </span>
                   <span className="text-xs text-[#56616A] mt-1">
-                    Maximum 10 fichiers · 10 Mo max par fichier · Métadonnées GPS
-                    retirées automatiquement
+                    Vous pourrez saisir le titre et la courte description de chaque
+                    image juste après sélection
                   </span>
                 </label>
               </div>
@@ -472,8 +487,8 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
               {preparedFiles.length > 0 && (
                 <div className="space-y-3">
                   <p className="text-xs font-semibold uppercase tracking-wider text-[#245B7A]">
-                    Prévisualisation ({preparedFiles.length} / 10 fichier(s) prêt(s),
-                    EXIF/GPS retirés)
+                    Prévisualisation et description au survol ({preparedFiles.length}{' '}
+                    / 10 fichier(s))
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {preparedFiles.map((item, idx) => (
@@ -506,7 +521,7 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
                                 e.target.value
                               )
                             }
-                            placeholder="Légende ou contexte (facultatif)"
+                            placeholder="Courte description affichée au survol..."
                             className="w-full px-2.5 py-1 text-xs bg-white border border-[#DCE8EF] rounded text-[#17191C]"
                           />
                           <div className="flex items-center justify-between text-[11px] text-[#56616A]">
@@ -539,9 +554,8 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
                   className="mt-1 h-4 w-4 rounded border-[#DCE8EF] text-[#245B7A] focus:ring-[#245B7A]"
                 />
                 <span className="text-[#56616A] leading-relaxed">
-                  Je confirme être autorisé(e) à transmettre ces photographies, qu’elles
-                  respectent la dignité du défunt et de ses proches, et j’accepte
-                  qu’elles soient examinées par la famille avant toute publication.
+                  Je confirme que ces photographies respectent la dignité du défunt
+                  et de ses proches et j’accepte leur publication dans la galerie.
                 </span>
               </label>
 
@@ -573,19 +587,6 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
                   : 'Publier les photographies sur le site'}
               </button>
             </form>
-          </div>
-        ) : (
-          <div className="bg-white border border-[#DCE8EF] rounded-lg p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <h3 className="font-serif-editorial text-xl font-semibold text-[#17191C]">
-                Contributions photographiques des invités
-              </h3>
-              <p className="text-xs sm:text-sm text-[#56616A]">
-                L’envoi public de photographies par les invités est actuellement
-                désactivé par la famille. Seules les photos validées par
-                l’administration familiale sont affichées ci-dessus.
-              </p>
-            </div>
           </div>
         )}
       </div>
@@ -624,12 +625,15 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
                 className="max-h-[70vh] w-auto object-contain"
               />
             </div>
-            <div className="p-4 bg-white flex flex-wrap items-center justify-between gap-2 text-xs text-[#56616A]">
-              <span>
+            <div className="p-4 bg-white space-y-1 text-xs text-[#56616A]">
+              <p className="text-sm text-[#17191C] font-medium">
                 {lightboxPhoto.caption ||
                   `Souvenir partagé par ${lightboxPhoto.authorName}`}
-              </span>
-              <span>Catégorie : {CATEGORY_LABELS[lightboxPhoto.category]}</span>
+              </p>
+              <p>
+                Partagé par {lightboxPhoto.authorName} · Catégorie :{' '}
+                {CATEGORY_LABELS[lightboxPhoto.category]}
+              </p>
             </div>
           </div>
         </div>
@@ -664,13 +668,6 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
               </button>
             </div>
 
-            <p className="text-xs text-[#56616A] leading-relaxed">
-              Vous demandez la vérification ou le retrait de la photographie «{' '}
-              <strong className="text-[#17191C]">{deletionModalPhoto.title}</strong>{' '}
-              ». Votre demande sera immédiatement signalée à l’administration
-              familiale.
-            </p>
-
             <form onSubmit={handleRequestDeletion} className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-[#17191C] mb-1">
@@ -694,7 +691,6 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
                   value={deletionReason}
                   onChange={(e) => setDeletionReason(e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-[#DCE8EF] rounded-md"
-                  placeholder="Précisez pourquoi vous souhaitez le retrait de cette image..."
                 />
               </div>
 

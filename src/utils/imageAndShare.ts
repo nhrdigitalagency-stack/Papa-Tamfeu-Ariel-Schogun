@@ -127,9 +127,9 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
 
 export async function shareMemorialUrl(
   title = 'En mémoire de Papa Tamfeu Ariel Schogun | 1989–2026',
-  text = 'Faire-part de deuil et hommage à Papa Tamfeu Ariel Schogun (1989–2026).'
+  text = 'En mémoire de Papa Tamfeu Ariel Schogun | 1989–2026'
 ): Promise<'shared' | 'copied' | 'failed'> {
-  const url = window.location.href;
+  const url = window.location.origin + window.location.pathname;
   if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
     try {
       await navigator.share({ title, text, url });
@@ -141,7 +141,7 @@ export async function shareMemorialUrl(
     }
   }
 
-  const copied = await copyTextToClipboard(url);
+  const copied = await copyTextToClipboard(`${text} — ${url}`);
   return copied ? 'copied' : 'failed';
 }
 

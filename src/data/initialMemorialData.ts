@@ -14,7 +14,8 @@ export const INITIAL_MEMORIAL_SETTINGS: MemorialSettings = {
   deathYear: 2026,
   birthPlace: 'Bandjoun, région de l’Ouest, Cameroun',
   maritalStatus: 'Marié',
-  portraitUrl: '/assets/aistudio/Portrait_professionnel_en_costume_sombre_f15e88d6.png',
+  portraitUrl:
+    '/assets/aistudio/Portrait_c_r_moniel_devant_la_chefferie_de_Bandjoun_f1aac569.png',
   floralImageUrl:
     '/assets/aistudio/jWzG97KwgJ2vECFkAxtco_S5j64_fR3jAP8UqTFz0ot1B0UvjNq0gMNANjsuVw0wuIfdApvjSnRin5XquNxTuQlKddDoxye91uNc0BgareId3H9Fjm-eNShx2FGNhWU82Tfc2LIkxOv_PtuFFAqGQOEWsRTBBYPTqUnBr6PJ7ZD2KZifpr-3ByOS0sV_iUWO_2e0dc6a2.jpg',
   familyNames: ['Famille Tamfeu', 'Famille Carlade'],
@@ -431,15 +432,48 @@ export const DRAFT_TRIBUTE_PROPOSALS: DraftTributeProposal[] = [
 // Aucun faux témoignage n'est publié par défaut dans la galerie publique.
 export const INITIAL_TRIBUTES: TributeItem[] = [];
 
-// Seul le portrait officiel fourni par la famille est présent par défaut.
 export const INITIAL_PHOTOS: PhotoItem[] = [
   {
-    id: 'photo-official-portrait',
-    title: 'Portrait de Papa Tamfeu Ariel Schogun',
-    caption: 'Portrait transmis par la famille (1989 — 2026).',
+    id: 'photo-chefferie-bandjoun',
+    title: 'Portrait cérémoniel devant la Chefferie de Bandjoun',
+    caption:
+      'En tenue traditionnelle devant la Chefferie de Bandjoun, symbole d’attachement à ses racines et au patrimoine culturel de l’Ouest Cameroun.',
     category: 'portrait',
     authorName: 'Famille Tamfeu',
-    imageDataUrl: '/assets/aistudio/Portrait_professionnel_en_costume_sombre_f15e88d6.png',
+    imageDataUrl:
+      '/assets/aistudio/Portrait_c_r_moniel_devant_la_chefferie_de_Bandjoun_f1aac569.png',
+    mimeType: 'image/png',
+    fileSizeBytes: 480000,
+    exifStripped: true,
+    consentPublication: true,
+    status: 'approved',
+    createdAt: '2026-10-26T00:02:00.000Z',
+  },
+  {
+    id: 'photo-rencontre-diplomatique',
+    title: 'Poignée de main officielle devant les drapeaux',
+    caption:
+      'Instant solennel de rencontre et d’échange illustrant son parcours d’ouverture et de rayonnement.',
+    category: 'professionnel',
+    authorName: 'Famille Tamfeu',
+    imageDataUrl:
+      '/assets/aistudio/Poign_e_de_main_diplomatique_devant_les_drapeaux_da7da34b.png',
+    mimeType: 'image/png',
+    fileSizeBytes: 450000,
+    exifStripped: true,
+    consentPublication: true,
+    status: 'approved',
+    createdAt: '2026-10-26T00:01:00.000Z',
+  },
+  {
+    id: 'photo-official-portrait',
+    title: 'Portrait en tenue de ville — Enseignant et homme de savoir',
+    caption:
+      'Enseignant à l’Université de Douala et au Collège La Retraite à Yaoundé, dédié à la formation et à la transmission des connaissances.',
+    category: 'professionnel',
+    authorName: 'Famille Tamfeu',
+    imageDataUrl:
+      '/assets/aistudio/Portrait_professionnel_en_costume_sombre_f15e88d6.png',
     mimeType: 'image/png',
     fileSizeBytes: 420000,
     exifStripped: true,
