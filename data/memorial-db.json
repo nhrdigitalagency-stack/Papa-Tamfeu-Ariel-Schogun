@@ -263,7 +263,20 @@
       "weekdayTransmitted": "Dimanche"
     }
   ],
-  "tributes": [],
+  "tributes": [
+    {
+      "_key": "trib-81752f99-6592-45d5-89b7-6164d071b095",
+      "authorFirstName": "romaric",
+      "authorLastName": "Hirsein",
+      "consentPublication": true,
+      "createdAt": "2026-10-26T08:49:28.257Z",
+      "id": "trib-81752f99-6592-45d5-89b7-6164d071b095",
+      "isPrivateToFamily": false,
+      "message": "il etait un homme bien",
+      "relationship": "collegue",
+      "status": "approved"
+    }
+  ],
   "photos": [
     {
       "_key": "photo-chefferie-bandjoun",

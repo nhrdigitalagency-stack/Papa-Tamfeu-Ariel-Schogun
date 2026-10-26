@@ -308,40 +308,53 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
                 key={photo.id}
                 className="group relative bg-white border border-[#DCE8EF] rounded-lg overflow-hidden shadow-xs flex flex-col justify-between"
               >
-                {/* Image Container with Hover Description Overlay */}
+                {/* Image Container with Automatic Hover Description Overlay (Caption) */}
                 <div
                   onClick={() => setLightboxPhoto(photo)}
                   role="button"
                   tabIndex={0}
+                  aria-label={`${photo.title} — ${
+                    photo.caption ||
+                    `Souvenir partagé en mémoire de ${settings.displayName}`
+                  }`}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       setLightboxPhoto(photo);
                     }
                   }}
-                  className="relative w-full h-80 overflow-hidden bg-[#17191C] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#245B7A]"
+                  className="relative w-full h-80 sm:h-88 overflow-hidden bg-[#17191C] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#245B7A]"
                 >
                   <img
                     src={photo.imageDataUrl}
                     alt={photo.title}
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-cover object-top transition-transform duration-500 ease-out group-hover:scale-105"
                   />
 
-                  {/* Hover Overlay with Short Description appearing directly on the image */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#17191C]/95 via-[#17191C]/65 to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5 text-left">
-                    <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 space-y-2">
+                  {/* Subtle resting indicator that fades out on hover */}
+                  <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded bg-[#17191C]/75 backdrop-blur-xs border border-white/15 text-[11px] font-medium text-[#EFF8FD] transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
+                    Survoler pour lire la description
+                  </div>
+
+                  {/* Elegant Embedded Caption Overlay on Hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#17191C]/95 via-[#17191C]/75 to-[#17191C]/25 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-300 flex flex-col justify-end p-5 sm:p-6 text-left">
+                    <div className="transform translate-y-3 group-hover:translate-y-0 group-focus-within:translate-y-0 transition-transform duration-300 space-y-2.5">
                       <span className="text-[11px] uppercase tracking-widest text-[#A9D7F2] font-semibold block">
                         {CATEGORY_LABELS[photo.category]}
                       </span>
-                      <h3 className="font-serif-editorial text-xl font-semibold text-white leading-snug">
+                      <h3 className="font-serif-editorial text-xl sm:text-2xl font-semibold text-white leading-snug">
                         {photo.title}
                       </h3>
-                      <p className="text-xs sm:text-sm text-white/90 leading-relaxed">
+                      <div
+                        className="w-12 h-[1px] bg-[#A9D7F2]/75"
+                        aria-hidden="true"
+                      />
+                      <p className="text-xs sm:text-sm text-[#EFF8FD] leading-relaxed">
                         {photo.caption ||
-                          `Souvenir partagé en mémoire de ${settings.displayName}.`}
+                          `Souvenir photographique partagé en mémoire de ${settings.displayName}.`}
                       </p>
-                      <div className="pt-2 flex items-center justify-between text-[11px] text-[#A9D7F2] border-t border-white/20">
+                      <div className="pt-2.5 flex items-center justify-between text-[11px] text-[#A9D7F2] border-t border-white/20">
                         <span>Partagé par {photo.authorName}</span>
                         <span className="inline-flex items-center gap-1 font-medium text-white">
                           <Eye className="w-3.5 h-3.5" />
@@ -352,11 +365,16 @@ export const PhotosSectionView: React.FC<PhotosSectionViewProps> = ({
                   </div>
                 </div>
 
-                {/* Subtle Bottom Bar for Mobile / Quick Access */}
+                {/* Subtle Bottom Bar for Mobile & Action Controls */}
                 <figcaption className="px-4 py-3 bg-white border-t border-[#DCE8EF] flex items-center justify-between gap-2">
-                  <span className="font-serif-editorial text-base font-semibold text-[#17191C] truncate">
-                    {photo.title}
-                  </span>
+                  <div className="min-w-0">
+                    <p className="font-serif-editorial text-base font-semibold text-[#17191C] truncate">
+                      {photo.title}
+                    </p>
+                    <p className="text-xs text-[#56616A] truncate sm:hidden">
+                      {photo.caption}
+                    </p>
+                  </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <button
                       type="button"
