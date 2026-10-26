@@ -1,0 +1,6 @@
+{
+  "name": "En mémoire de Papa Tamfeu Ariel Schogun | 1989–2026",
+  "description": "Faire-part de deuil et hommage à Papa Tamfeu Ariel Schogun (1989–2026). Programme des cérémonies, biographie, témoignages et condoléances.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

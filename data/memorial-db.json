@@ -1,0 +1,266 @@
+{
+  "settings": {
+    "displayName": "Papa Tamfeu Ariel Schogun",
+    "birthYear": 1989,
+    "deathYear": 2026,
+    "birthPlace": "Bandjoun, région de l’Ouest, Cameroun",
+    "maritalStatus": "Marié",
+    "portraitUrl": "/assets/aistudio/Portrait_professionnel_en_costume_sombre_f15e88d6.png",
+    "floralImageUrl": "/assets/aistudio/jWzG97KwgJ2vECFkAxtco_S5j64_fR3jAP8UqTFz0ot1B0UvjNq0gMNANjsuVw0wuIfdApvjSnRin5XquNxTuQlKddDoxye91uNc0BgareId3H9Fjm-eNShx2FGNhWU82Tfc2LIkxOv_PtuFFAqGQOEWsRTBBYPTqUnBr6PJ7ZD2KZifpr-3ByOS0sV_iUWO_2e0dc6a2.jpg",
+    "familyNames": [
+      "Famille Tamfeu",
+      "Famille Carlade"
+    ],
+    "familyListConfirmed": false,
+    "programConfirmed": false,
+    "weekdayInconsistencyResolved": false,
+    "contactConfirmed": false,
+    "contactName": "",
+    "whatsappNumber": "+33 7 53 04 93 53",
+    "homeMapsUrl": "",
+    "homeAddress": "",
+    "customMapImageUrl": "",
+    "timeZone": "Africa/Douala",
+    "allowPublicTributes": true,
+    "allowGuestPhotos": true,
+    "religiousSymbol": "none",
+    "religiousSymbolConfirmed": false,
+    "lastUpdatedAt": "2026-10-26T00:00:00.000Z"
+  },
+  "families": [
+    {
+      "id": "fam-tamfeu",
+      "name": "Famille Tamfeu",
+      "category": null,
+      "note": "",
+      "displayOrder": 1
+    },
+    {
+      "id": "fam-carlade",
+      "name": "Famille Carlade",
+      "category": null,
+      "note": "",
+      "displayOrder": 2
+    }
+  ],
+  "biographySections": [
+    {
+      "id": "bio-etat-civil",
+      "code": "etat_civil",
+      "title": "État civil",
+      "content": "Né en 1989 à Bandjoun, dans la région de l’Ouest du Cameroun, Papa Tamfeu Ariel Schogun était marié. Il est décédé en 2026.",
+      "isVisiblePublic": true,
+      "isValidated": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "bio-scolaire",
+      "code": "scolaire_universitaire",
+      "title": "Parcours scolaire et universitaire",
+      "content": "",
+      "isVisiblePublic": false,
+      "isValidated": false,
+      "displayOrder": 2
+    },
+    {
+      "id": "bio-professionnelle",
+      "code": "vie_professionnelle",
+      "title": "Vie professionnelle",
+      "content": "Enseignant, Papa Tamfeu Ariel Schogun a exercé à l’Université de Douala ainsi qu’au Collège La Retraite à Yaoundé. Son parcours professionnel s’inscrit dans le domaine de l’éducation et de la transmission des connaissances.",
+      "isVisiblePublic": true,
+      "isValidated": true,
+      "displayOrder": 3
+    },
+    {
+      "id": "bio-familiale",
+      "code": "vie_familiale",
+      "title": "Vie familiale",
+      "content": "Papa Tamfeu Ariel Schogun était marié. Les précisions complémentaires sur sa vie de famille pourront être ajoutées après validation par ses proches.",
+      "isVisiblePublic": true,
+      "isValidated": true,
+      "displayOrder": 4
+    },
+    {
+      "id": "bio-associative",
+      "code": "vie_associative",
+      "title": "Vie associative",
+      "content": "",
+      "isVisiblePublic": false,
+      "isValidated": false,
+      "displayOrder": 5
+    },
+    {
+      "id": "bio-religieuse",
+      "code": "vie_religieuse",
+      "title": "Vie religieuse",
+      "content": "",
+      "isVisiblePublic": false,
+      "isValidated": false,
+      "displayOrder": 6
+    },
+    {
+      "id": "bio-souvenir",
+      "code": "souvenir_transmission",
+      "title": "Souvenir et transmission",
+      "content": "Homme de famille, enseignant et acteur de la transmission du savoir, il laisse derrière lui le souvenir d’une vie qui a marqué sa famille, ses collègues, ses élèves et tous ceux qui ont eu le privilège de le connaître. Son souvenir et les valeurs qu’il a transmises continueront de vivre dans les cœurs.",
+      "isVisiblePublic": true,
+      "isValidated": true,
+      "displayOrder": 7
+    }
+  ],
+  "programEvents": [
+    {
+      "id": "evt-veillee-sans-corps",
+      "dayKey": "veillee_sans_corps",
+      "dayTitleTransmitted": "Veillée sans corps — Date à confirmer",
+      "weekdayTransmitted": "",
+      "dateConfirmed": false,
+      "timeLabel": "À partir de 18 h",
+      "timeConfirmed": false,
+      "title": "Veillée sans corps",
+      "location": "Nkolbisson",
+      "locationDetails": "Localisation exacte du domicile à Nkolbisson à confirmer par la famille.",
+      "locationConfirmed": false,
+      "verificationNote": "Date exacte et adresse précise à Nkolbisson à confirmer.",
+      "displayOrder": 1
+    },
+    {
+      "id": "evt-j1-levee",
+      "dayKey": "jour_1",
+      "dayTitleTransmitted": "9 novembre — Date transmise à confirmer",
+      "weekdayTransmitted": "Vendredi",
+      "dateConfirmed": false,
+      "timeLabel": "00 h",
+      "timeConfirmed": false,
+      "title": "Levée de corps à la morgue du CHU",
+      "location": "Morgue du CHU",
+      "locationDetails": "Heure (« 00 h ») et identification exacte de la morgue du CHU à confirmer.",
+      "locationConfirmed": false,
+      "verificationNote": "Valeur transmise : 0 h (minuit). Heure et établissement exact à confirmer.",
+      "displayOrder": 2
+    },
+    {
+      "id": "evt-j1-messe",
+      "dayKey": "jour_1",
+      "dayTitleTransmitted": "9 novembre — Date transmise à confirmer",
+      "weekdayTransmitted": "Vendredi",
+      "dateConfirmed": false,
+      "timeLabel": "19 h",
+      "timeConfirmed": false,
+      "title": "Messe à la chefferie Guigui",
+      "location": "Chefferie Guigui",
+      "locationDetails": "Adresse exacte et orthographe validée de la chefferie Guigui à confirmer.",
+      "locationConfirmed": false,
+      "verificationNote": "Adresse exacte à confirmer.",
+      "displayOrder": 3
+    },
+    {
+      "id": "evt-j1-veillee",
+      "dayKey": "jour_1",
+      "dayTitleTransmitted": "9 novembre — Date transmise à confirmer",
+      "weekdayTransmitted": "Vendredi",
+      "dateConfirmed": false,
+      "timeLabel": "21 h",
+      "timeConfirmed": false,
+      "title": "Veillée jusqu’à l’aube",
+      "location": "Lieu à confirmer",
+      "locationDetails": "Localisation exacte de la veillée après la messe à confirmer.",
+      "locationConfirmed": false,
+      "verificationNote": "Lieu précis à confirmer par la famille.",
+      "displayOrder": 4
+    },
+    {
+      "id": "evt-j2-accueil",
+      "dayKey": "jour_2",
+      "dayTitleTransmitted": "10 novembre — Date transmise à confirmer",
+      "weekdayTransmitted": "Samedi",
+      "dateConfirmed": false,
+      "timeLabel": "09 h",
+      "timeConfirmed": false,
+      "title": "Accueil et installation des invités",
+      "location": "Lieu précis à confirmer",
+      "locationDetails": "Localisation des cérémonies à confirmer par la famille.",
+      "locationConfirmed": false,
+      "verificationNote": "Lieu précis à confirmer.",
+      "displayOrder": 5
+    },
+    {
+      "id": "evt-j2-messe-temoignages",
+      "dayKey": "jour_2",
+      "dayTitleTransmitted": "10 novembre — Date transmise à confirmer",
+      "weekdayTransmitted": "Samedi",
+      "dateConfirmed": false,
+      "timeLabel": "10 h",
+      "timeConfirmed": false,
+      "title": "Messe et témoignages",
+      "location": "Lieu précis à confirmer",
+      "locationDetails": "Célébration religieuse et hommages au défunt. Lieu exact à confirmer.",
+      "locationConfirmed": false,
+      "verificationNote": "Lieu précis à confirmer.",
+      "displayOrder": 6
+    },
+    {
+      "id": "evt-j2-inhumation",
+      "dayKey": "jour_2",
+      "dayTitleTransmitted": "10 novembre — Date transmise à confirmer",
+      "weekdayTransmitted": "Samedi",
+      "dateConfirmed": false,
+      "timeLabel": "11 h 30",
+      "timeConfirmed": false,
+      "title": "Inhumation",
+      "location": "Lieu exact de l’inhumation à confirmer",
+      "locationDetails": "Dernier hommage et mise en terre. Lieu exact à confirmer.",
+      "locationConfirmed": false,
+      "verificationNote": "Lieu exact de l’inhumation à confirmer.",
+      "displayOrder": 7
+    },
+    {
+      "id": "evt-j2-collation",
+      "dayKey": "jour_2",
+      "dayTitleTransmitted": "10 novembre — Date transmise à confirmer",
+      "weekdayTransmitted": "Samedi",
+      "dateConfirmed": false,
+      "timeLabel": "12 h 30",
+      "timeConfirmed": false,
+      "title": "Collation",
+      "location": "Lieu précis à confirmer",
+      "locationDetails": "Moment de partage avec les familles et les invités. Lieu exact à confirmer.",
+      "locationConfirmed": false,
+      "verificationNote": "Lieu précis à confirmer.",
+      "displayOrder": 8
+    },
+    {
+      "id": "evt-j3-suite",
+      "dayKey": "jour_3",
+      "dayTitleTransmitted": "11 novembre — Date transmise à confirmer",
+      "weekdayTransmitted": "Dimanche",
+      "dateConfirmed": false,
+      "timeLabel": "08 h",
+      "timeConfirmed": false,
+      "title": "Suite des funérailles",
+      "location": "Lieu précis à confirmer",
+      "locationDetails": "Suite du programme des funérailles et dernières activités familiales.",
+      "locationConfirmed": false,
+      "verificationNote": "Lieu précis à confirmer.",
+      "displayOrder": 9
+    }
+  ],
+  "tributes": [],
+  "photos": [
+    {
+      "id": "photo-official-portrait",
+      "title": "Portrait de Papa Tamfeu Ariel Schogun",
+      "caption": "Portrait transmis par la famille (1989 — 2026).",
+      "category": "portrait",
+      "authorName": "Famille Tamfeu",
+      "imageDataUrl": "/assets/aistudio/Portrait_professionnel_en_costume_sombre_f15e88d6.png",
+      "mimeType": "image/png",
+      "fileSizeBytes": 420000,
+      "exifStripped": true,
+      "consentPublication": true,
+      "status": "approved",
+      "createdAt": "2026-10-26T00:00:00.000Z"
+    }
+  ],
+  "attendances": []
+}
